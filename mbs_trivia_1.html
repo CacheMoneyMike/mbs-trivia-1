@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ginnie Mae MBS Primer</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap');
+
+        :root {
+            --background: #111827; /* Dark Blue-Gray */
+            --slide-bg: #1F2937; /* Lighter Blue-Gray */
+            --text-color: #F9FAFB; /* Off-White */
+            --text-muted: #9CA3AF; /* Lighter Gray */
+            --accent-color: #38BDF8; /* Sky Blue */
+            --correct-green: #4ADE80;
+            --incorrect-red: #F87171;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: var(--background);
+            color: var(--text-color);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #primer-container {
+            width: 95%;
+            max-width: 1200px;
+            height: 90vh;
+            max-height: 800px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--slide-bg);
+            border-radius: 16px;
+            box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+            overflow: hidden;
+        }
+
+        #slide-container {
+            flex-grow: 1;
+            padding: 4rem;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+        }
+
+        .slide-content {
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeIn 0.6s ease-out forwards;
+        }
+
+        @keyframes fadeIn {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        #question-header {
+            color: var(--accent-color);
+            font-weight: 700;
+            margin-bottom: 1rem;
+            font-size: 1.25rem;
+        }
+
+        #question-text {
+            font-size: 2.25rem;
+            font-weight: 700;
+            line-height: 1.3;
+            margin-bottom: 3rem;
+        }
+
+        #answers-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 1.5rem;
+        }
+
+        .answer-btn {
+            background-color: #374151;
+            border: 2px solid #4B5563;
+            color: var(--text-color);
+            padding: 1.5rem;
+            font-size: 1.25rem;
+            text-align: left;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .answer-btn:hover:not(:disabled) {
+            background-color: #4B5563;
+            border-color: var(--accent-color);
+        }
+        
+        .answer-btn:disabled {
+            cursor: not-allowed;
+        }
+        
+        .answer-btn.correct {
+            background-color: var(--correct-green);
+            border-color: var(--correct-green);
+            color: #111827;
+        }
+        
+        .answer-btn.incorrect {
+            background-color: var(--incorrect-red);
+            border-color: var(--incorrect-red);
+            color: #111827;
+        }
+
+        .answer-btn.faded:not(.correct):not(.incorrect) {
+            opacity: 0.5;
+        }
+
+        #explainer-container {
+            margin-top: 2rem;
+            padding: 1.5rem;
+            background-color: var(--background);
+            border-radius: 8px;
+            opacity: 0;
+            transform: scale(0.95);
+            transition: opacity 0.4s ease, transform 0.4s ease;
+            min-height: 100px;
+        }
+        
+        #explainer-container.visible {
+            opacity: 1;
+            transform: scale(1);
+        }
+
+        #explainer-container h3 {
+            color: var(--accent-color);
+            margin-bottom: 0.5rem;
+        }
+
+        #explainer-text {
+            font-size: 1.1rem;
+            line-height: 1.6;
+            color: var(--text-muted);
+        }
+
+        #navigation {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1.5rem 4rem;
+            border-top: 1px solid #374151;
+        }
+
+        #reveal-btn {
+            background-color: var(--accent-color);
+            color: var(--background);
+            border: none;
+            padding: 0.75rem 2rem;
+            font-size: 1rem;
+            font-weight: 700;
+            border-radius: 8px;
+            cursor: pointer;
+            visibility: hidden; /* Hidden until an answer is selected */
+        }
+        
+        #reveal-btn.visible {
+            visibility: visible;
+        }
+
+        .nav-arrow {
+            background: none;
+            border: none;
+            color: #6B7280;
+            font-size: 2.5rem;
+            cursor: pointer;
+            padding: 0.5rem;
+        }
+
+        .nav-arrow:hover {
+            color: var(--accent-color);
+        }
+        
+        .nav-arrow:disabled {
+            color: #4B5563;
+            cursor: not-allowed;
+        }
+
+    </style>
+</head>
+<body>
+
+    <div id="primer-container">
+        <div id="slide-container">
+            </div>
+        <div id="navigation">
+            <button id="prev-btn" class="nav-arrow" disabled>&#8592;</button>
+            <button id="reveal-btn">Reveal Explanation</button>
+            <button id="next-btn" class="nav-arrow">&#8594;</button>
+        </div>
+    </div>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const questions = [
+            {
+                question: "What is a mortgage-backed security (MBS) at its core?",
+                answers: [
+                    "A type of corporate stock",
+                    "A government savings bond",
+                    "A bond made up of a bundle of home loans",
+                    "A loan for a commercial property"
+                ],
+                correctIndex: 2,
+                explainer: "MBS are created when loans are purchased from banks, bundled together, and sold as a security to investors. This process provides liquidity to the mortgage market."
+            },
+            {
+                question: "Of the three major US mortgage agencies, which is explicitly backed by the 'full faith and credit' of the U.S. government?",
+                answers: [
+                    "Fannie Mae (FNMA)",
+                    "Ginnie Mae (GNMA)",
+                    "Freddie Mac (FHLMC)",
+                    "All of the above"
+                ],
+                correctIndex: 1,
+                explainer: "Ginnie Mae's guarantee makes its MBS ultra-safe from credit risk, as the US government backs the timely payment of principal and interest to investors."
+            },
+            {
+                question: "The 2008 Great Financial Crisis was largely fueled by widespread defaults in which specific type of MBS?",
+                answers: [
+                    "Ginnie Mae MBS",
+                    "Prime Jumbo MBS",
+                    "Fannie Mae & Freddie Mac MBS",
+                    "Subprime, Private-Label MBS"
+                ],
+                correctIndex: 3,
+                explainer: "These were MBS created by private firms and backed by risky subprime mortgages without government guarantees, leading to massive investor losses when defaults surged."
+            },
+            {
+                question: "Why were Ginnie Mae MBS considered a 'safe haven' asset during and after the 2008 crisis?",
+                answers: [
+                    "They had higher interest rates",
+                    "They were not traded publicly",
+                    "Their explicit government guarantee",
+                    "They were backed by commercial loans"
+                ],
+                correctIndex: 2,
+                explainer: "The government guarantee meant investors continued to be paid even as defaults rose elsewhere in the market, reinforcing Ginnie Mae's status as a low-risk investment."
+            },
+            {
+                question: "What is the primary role of Ginnie Mae in the mortgage market?",
+                answers: [
+                    "To originate new home loans",
+                    "To service mortgages directly",
+                    "To provide a guarantee on MBS backed by government-insured loans",
+                    "To set national interest rates"
+                ],
+                correctIndex: 2,
+                explainer: "Ginnie Mae doesn't issue or buy loans. It provides a crucial guarantee on securities backed by loans already insured by other agencies like the FHA and VA."
+            }
+        ];
+
+        let currentQuestionIndex = 0;
+        let answerSelected = false;
+
+        const slideContainer = document.getElementById('slide-container');
+        const prevBtn = document.getElementById('prev-btn');
+        const nextBtn = document.getElementById('next-btn');
+        const revealBtn = document.getElementById('reveal-btn');
+
+        function loadQuestion(index) {
+            answerSelected = false;
+            const q = questions[index];
+            
+            slideContainer.innerHTML = `
+                <div class="slide-content">
+                    <div id="question-header">QUESTION ${index + 1} OF ${questions.length}</div>
+                    <h2 id="question-text">${q.question}</h2>
+                    <div id="answers-container">
+                        ${q.answers.map((answer, i) => `<button class="answer-btn" data-index="${i}">${answer}</button>`).join('')}
+                    </div>
+                    <div id="explainer-container">
+                        <h3>Why This Matters:</h3>
+                        <p id="explainer-text">${q.explainer}</p>
+                    </div>
+                </div>
+            `;
+
+            document.querySelectorAll('.answer-btn').forEach(btn => {
+                btn.addEventListener('click', handleAnswerClick);
+            });
+            
+            revealBtn.classList.remove('visible');
+            updateNavButtons();
+        }
+
+        function handleAnswerClick(e) {
+            if (answerSelected) return;
+            answerSelected = true;
+
+            const selectedIndex = parseInt(e.target.dataset.index);
+            const correctIndex = questions[currentQuestionIndex].correctIndex;
+            
+            const answerButtons = document.querySelectorAll('.answer-btn');
+            
+            if (selectedIndex === correctIndex) {
+                e.target.classList.add('correct');
+            } else {
+                e.target.classList.add('incorrect');
+                answerButtons[correctIndex].classList.add('correct');
+            }
+
+            answerButtons.forEach(btn => {
+                btn.disabled = true;
+                if (!btn.classList.contains('correct') && !btn.classList.contains('incorrect')) {
+                    btn.classList.add('faded');
+                }
+            });
+
+            revealBtn.classList.add('visible');
+        }
+        
+        revealBtn.addEventListener('click', () => {
+             document.getElementById('explainer-container').classList.add('visible');
+        });
+
+        function updateNavButtons() {
+            prevBtn.disabled = currentQuestionIndex === 0;
+            nextBtn.disabled = currentQuestionIndex === questions.length - 1;
+        }
+
+        prevBtn.addEventListener('click', () => {
+            if (currentQuestionIndex > 0) {
+                currentQuestionIndex--;
+                loadQuestion(currentQuestionIndex);
+            }
+        });
+
+        nextBtn.addEventListener('click', () => {
+            if (currentQuestionIndex < questions.length - 1) {
+                currentQuestionIndex++;
+                loadQuestion(currentQuestionIndex);
+            }
+        });
+
+        // Initial Load
+        loadQuestion(currentQuestionIndex);
+    });
+    </script>
+</body>
+</html>
